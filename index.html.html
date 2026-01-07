@@ -34,10 +34,7 @@
             letter-spacing: 1px;
         }
 
-        /* بخش ورودی نام پیکر که اضافه شد */
-        .piker-box { padding: 15px; }
-        #pikerName { width: 100%; padding: 10px; border-radius: 8px; border: none; background: #2d3748; color: white; text-align: center; }
-
+        /* اسلات‌ها به صورت کارتی */
         .slot-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -58,11 +55,13 @@
 
         .slot-card.active { border-color: var(--accent); transform: translateY(-3px); }
         .slot-card.filled { background: #22543d; border-color: var(--success); }
+
         .slot-card span { display: block; font-size: 10px; color: var(--gray); margin-top: 5px; }
         .slot-card b { font-size: 16px; }
 
         input[type="file"] { display: none; }
 
+        /* لیست تجمیعی */
         .container { padding: 10px; }
         .product-card {
             background: var(--card-bg);
@@ -82,14 +81,7 @@
         }
 
         .p-title { font-size: 16px; font-weight: bold; color: white; }
-        .p-info { font-size: 11px; color: var(--accent); margin-top: 4px; text-decoration: underline; cursor: pointer; }
-
-        /* دکمه ارسال گزارش */
-        .submit-btn {
-            background: var(--success); color: white; border: none; padding: 15px; 
-            width: calc(100% - 30px); margin: 15px; border-radius: 12px; font-weight: bold;
-            display: none; cursor: pointer;
-        }
+        .p-info { font-size: 11px; color: var(--gray); margin-top: 4px; }
 
         .order-row {
             padding: 12px 15px;
@@ -132,10 +124,6 @@
 
 <div class="header">PIKER UI MASTER PRO</div>
 
-<div class="piker-box">
-    <input type="text" id="pikerName" placeholder="نام خود را وارد کنید">
-</div>
-
 <div class="slot-container">
     <label class="slot-card" id="sc0">
         <b>۱</b><span id="u0">خالی</span>
@@ -160,18 +148,14 @@
     <div class="slot-card" onclick="location.reload()" style="background:#742a2a"><b>✖</b><span>ریست</span></div>
 </div>
 
-<div id="loading" style="display:none; color:var(--accent); margin:10px; text-align: center;">⏳ در حال آنالیز تصویر...</div>
+<div id="loading" style="display:none; color:var(--accent); margin:10px;">⏳ در حال آنالیز تصویر با کیفیت بالا...</div>
 
 <div class="container" id="output"></div>
-
-<button id="sendBtn" class="submit-btn" onclick="sendToGoogle()">📊 ثبت نهایی در گوگل شیت</button>
 
 <script>
     let slots = [null, null, null, null, null];
     const colors = ["#4299e1", "#f56565", "#48bb78", "#ecc94b", "#9f7aea"];
     const engine = new Html5Qrcode("output");
-    // لینک مستقیم شما
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0Kk8YRlZBmoY0ciF9_f8uQRWCWRmYvO_SObsVnL1_INd8AcFuj8Ve0I68Pj5jg6y0/exec';
 
     async function captureHighRes(index, input) {
         const file = input.files[0];
@@ -180,6 +164,7 @@
         document.getElementById('loading').style.display = 'block';
         document.getElementById(`sc${index}`).classList.add('active');
 
+        // پردازش تصویر با الگوریتم اسکن فایل (بسیار دقیق‌تر از زنده)
         engine.scanFile(file, true)
         .then(decodedText => {
             const data = JSON.parse(decodedText);
@@ -187,7 +172,6 @@
             document.getElementById(`sc${index}`).className = "slot-card filled";
             document.getElementById(`u${index}`).innerText = data.customer.name.substring(0, 8);
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('sendBtn').style.display = 'block';
             render();
         })
         .catch(err => {
@@ -227,14 +211,12 @@
 
         Object.keys(groups).sort().forEach(title => {
             const g = groups[title];
-            const googleSearchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(g.b + " " + title)}`;
-
             let h = `
                 <div class="product-card">
                     <div class="product-header">
                         <div>
                             <div class="p-title">📦 ${title}</div>
-                            <div class="p-info" onclick="window.open('${googleSearchUrl}', '_blank')">🔍 بارکد: ${g.b}</div>
+                            <div class="p-info">کد کالا: ${g.b}</div>
                         </div>
                         <div class="price-text">${isNaN(g.p) ? g.p : Number(g.p).toLocaleString()}</div>
                     </div>`;
@@ -251,24 +233,6 @@
             });
             out.innerHTML += h + `</div>`;
         });
-    }
-
-    function sendToGoogle() {
-        const name = document.getElementById('pikerName').value;
-        if(!name) return alert("ابتدا نام خود را بنویسید");
-
-        let totalQty = 0;
-        let orders = slots.filter(s => s !== null).length;
-        slots.forEach(s => { if(s) Object.values(s.items).forEach(it => totalQty += parseInt(it.quantity)); });
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({ pikerName: name, totalItems: totalQty, orderCount: orders })
-        }).then(() => {
-            alert("✅ ثبت شد!");
-            location.reload();
-        }).catch(() => alert("خطا در ارسال"));
     }
 </script>
 </body>
